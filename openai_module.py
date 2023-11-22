@@ -16,18 +16,18 @@ openai.api_key = config.OPENAI_KEY
 client = OpenAI()
 
 def main():
-    generate_image("Iron man suit with a blue and red color scheme")
+    # generate_image("Iron man suit with a blue and red color scheme")
     text = vision("img/screenshot.jpg")
     print(text)
-    listen("sound/test.mp3")
+    # listen("sound/test.mp3")
 
-    while True:
-        msg = input("You: ")
-        run = submit_message(config.ASSISTANT_ID, config.THREAD_ID, msg)
-        wait_on_run(run, config.THREAD_ID)
-        response = get_response(config.THREAD_ID)
-        pretty_print(response)
-        speak(response.data[0].content[0].text.value)
+    # while True:
+    #     msg = input("You: ")
+    #     run = submit_message(config.ASSISTANT_ID, config.THREAD_ID, msg)
+    #     wait_on_run(run, config.THREAD_ID)
+    #     response = get_response(config.THREAD_ID)
+    #     pretty_print(response)
+    #     speak(response.data[0].content[0].text.value)
 
 
 def submit_message(assistant_id, thread, user_message):
@@ -44,7 +44,7 @@ def get_response(thread):
 
 # Pretty printing helper
 def pretty_print(messages):
-    print(f"{messages.data[0].role}: {messages.data[0].content[0].text.value}\n")
+    print(f"Jarvis: \033[95m{messages.data[0].content[0].text.value}\033[0m\n")
 
 
 # Waiting in a loop
@@ -57,7 +57,7 @@ def wait_on_run(run, thread):
         time.sleep(0.5)
     return run
 
-def speak(text):
+def say(text):
     response = client.audio.speech.create(
         model=config.ASSISTANT_VOICE_MODEL,
         voice=config.ASSISTANT_VOICE,
@@ -67,7 +67,7 @@ def speak(text):
     audio = AudioSegment.from_file(byte_stream, format="mp3")
     play(audio)
 
-def listen(file_path):
+def audio_to_text(file_path):
     audio_file = open(file_path, "rb")
     transcript = client.audio.transcriptions.create(
         model="whisper-1", 
@@ -107,7 +107,7 @@ def vision(image_path):
 
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {OPENAI_KEY}"
+        "Authorization": f"Bearer {config.OPENAI_KEY}"
     }
 
     payload = {
@@ -118,7 +118,7 @@ def vision(image_path):
             "content": [
                 {
                 "type": "text",
-                "text": "What is in this image?"
+                "text": "What is in this image? Give a really short description. Should be less than 10 words."
                 },
                 {
                 "type": "image_url",
@@ -133,7 +133,7 @@ def vision(image_path):
     }
 
     response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
-    return response.json()
+    return response.json().get("choices")[0].get("message").get("content")
 
 def generate_image(prompt):
     response = client.images.generate(

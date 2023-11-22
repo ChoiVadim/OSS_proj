@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 import os
+import pvporcupine
 
 load_dotenv()
 
@@ -12,4 +13,14 @@ PVPORCUPINE_KEY = os.getenv('ACCESS_KEY')
 ASSISTANT_VOICE = "alloy"
 ASSISTANT_VOICE_MODEL = "tts-1"
 
-#INSTRUCTIONS = """Answer the following questions to generate a short response"""
+
+porcupine = pvporcupine.create(
+    access_key=PVPORCUPINE_KEY,
+    keywords=['jarvis'],
+    sensitivities=[1]
+)
+#print(pvporcupine.KEYWORDS)
+
+# INSTRUCTIONS = """Answer the following questions to generate a short response"""
+# pip freeze > requirements.txt
+# pip install -r requirements.txt
