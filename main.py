@@ -7,7 +7,6 @@ import openai
 from openai import OpenAI
 import cv2
 import cvzone
-import telebot
 from pvrecorder import PvRecorder
 from pydub.playback import play
 from pydub import AudioSegment
@@ -21,12 +20,15 @@ from openai_module import (generate_image, say, add_message_to_thread,
                            get_answer)
 
 
-send_photo_flag = False
 openai.api_key = config.OPENAI_KEY
 client = OpenAI()
 thread = client.beta.threads.create()
 
+
 def main():
+    thread_for_jarvis_vis = threading.Thread(target=jarvis_vis)
+    thread_for_jarvis_vis.start()
+
     # text = vision("img/screenshot.jpg")
 
     # Recorder for a wakeup word
@@ -72,32 +74,14 @@ def main():
        
 
             except KeyboardInterrupt:
-                # th.join()
+                thread_for_jarvis_vis.join()
                 porcupine.delete()
                 break
             except Exception as e:
                 print(e)
                 say("Sorry, I didn't get that.")
+                continue
 
-   
-def telegram_jarvis_bot():
-    bot = telebot.TeleBot(config.TELEGRAM_TOKEN)
-
-    def send_photo():
-        global send_photo_flag
-
-        while True:
-            if send_photo_flag: 
-                with open('screenshot.jpg', 'rb') as photo:
-                    bot.send_photo('1815092465', photo)
-                    send_photo_flag = False
-
-    threading.Thread(target=send_photo).start()
-
-    try:
-        bot.polling(none_stop=True)
-    except Exception as e:
-        print(e)
 
 def jarvis_vis():
     global send_photo_flag
@@ -117,11 +101,11 @@ def jarvis_vis():
         img, bboxs = detector_face.findFaces(img, draw=False)
 
         if not bboxs:
-            face_det_flag = True
+            face_detection_flag = True
         if bboxs:
-            if face_det_flag:
+            if face_detection_flag:
                 # threading.Thread(target=play, args=("sound/yes_sir.mp3", )).start()
-                face_det_flag = False
+                face_detection_flag = False
             
             for bbox in bboxs:
                 x, y, w, h = bbox['bbox']
@@ -139,7 +123,7 @@ def jarvis_vis():
 
             if fingers1 == [0, 1, 1, 0, 0]:
                 take_photo_flag = True
-                init_time = time.time()
+                init_time = time()
 
 
             # Check if a second hand is detected
@@ -148,11 +132,11 @@ def jarvis_vis():
 
         # Set timer for taking a photo and send it to telegram
         if take_photo_flag:
-            timer = int(time.time() - init_time)
+            timer = int(time() - init_time)
             if timer <= 3:
                 cv2.putText(img, str(timer), (150, 350), cv2.FONT_HERSHEY_PLAIN, 25, (255, 255, 255), 20)
             if timer > 3:
-                cv2.imwrite("screenshot.jpg", photo)
+                cv2.imwrite("img/screenshot.jpg", photo)
                 send_photo_flag = True
                 take_photo_flag = False
 
