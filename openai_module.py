@@ -3,6 +3,7 @@ import time
 import webbrowser
 import base64
 import requests
+import json
 
 import openai
 from openai import OpenAI
@@ -11,15 +12,22 @@ from pydub.playback import play
 
 import config
 
-
 openai.api_key = config.OPENAI_KEY
 client = OpenAI()
 
 def main():
-    # generate_image("Iron man suit with a blue and red color scheme")
-    text = vision("img/screenshot.jpg")
-    print(text)
-    # listen("sound/test.mp3")
+    thread = client.beta.threads.create()
+    while True:
+        add_message_to_thread(thread.id, input("Enter: "))
+        msg = get_answer(config.ASSISTANT_ID, thread)
+        if type(msg) == str:
+            print(msg)
+        else:
+            func_name = msg[0]
+            func_arg = json.loads(msg[1])["prompt"]
+            if func_name == "generate_image":
+                generate_image(func_arg)
+    
 
     # while True:
     #     msg = input("You: ")
@@ -30,6 +38,8 @@ def main():
     #     speak(response.data[0].content[0].text.value)
 
 
+
+# OpenAI functions for the assistant
 def submit_message(assistant_id, thread, user_message):
     client.beta.threads.messages.create(
         thread_id=thread, role="user", content=user_message
@@ -42,12 +52,9 @@ def submit_message(assistant_id, thread, user_message):
 def get_response(thread):
     return client.beta.threads.messages.list(thread_id=thread)
 
-# Pretty printing helper
 def pretty_print(messages):
     print(f"Jarvis: \033[95m{messages.data[0].content[0].text.value}\033[0m\n")
 
-
-# Waiting in a loop
 def wait_on_run(run, thread):
     while run.status == "queued" or run.status == "in_progress":
         run = client.beta.threads.runs.retrieve(
@@ -56,6 +63,70 @@ def wait_on_run(run, thread):
         )
         time.sleep(0.5)
     return run
+
+
+
+## Second ver of the assistant ##########################################
+def create_assistant():
+    # Create the assistant
+    assistant = client.beta.assistants.create(
+        name="Coding MateTest",
+        instructions="You are a programming support chatbot. Use your knowledge of programming languages to best respond to user queries.",
+        model="gpt-4-1106-preview",
+        tools=config.tools,
+    )
+    return assistant
+
+def add_message_to_thread(thread_id, user_question):
+    # Create a message inside the thread
+    message = client.beta.threads.messages.create(
+        thread_id=thread_id,
+        role="user",
+        content= user_question
+    )
+    return message
+
+def get_answer(assistant_id, thread):
+    print("Thinking...")
+    # run assistant
+    run =  client.beta.threads.runs.create(
+        thread_id=thread.id,
+        assistant_id=assistant_id
+    )
+
+    # wait for the run to complete
+    while run.status == "queued" or run.status == "in_progress":
+        run = client.beta.threads.runs.retrieve(
+            thread_id=thread.id,
+            run_id=run.id,
+        )
+        time.sleep(0.5)
+    print("All done...")
+
+    if run.required_action:
+        tool_id = run.required_action.submit_tool_outputs.tool_calls[0].id
+        tool_arg = run.required_action.submit_tool_outputs.tool_calls[0].function.arguments
+        func_name = run.required_action.submit_tool_outputs.tool_calls[0].function.name
+
+        run = client.beta.threads.runs.submit_tool_outputs(
+            thread_id=thread.id,
+            run_id=run.id,
+            tool_outputs=[
+                {
+                "tool_call_id": tool_id,
+                "output": tool_arg,
+                }
+            ]
+            )
+        return [func_name, tool_arg]
+    
+    # Get messages from the thread
+    messages = client.beta.threads.messages.list(thread.id)
+    message_content = messages.data[0].content[0].text.value
+    return message_content
+#########################################################################
+
+
 
 def say(text):
     response = client.audio.speech.create(
@@ -66,6 +137,17 @@ def say(text):
     byte_stream = io.BytesIO(response.content)
     audio = AudioSegment.from_file(byte_stream, format="mp3")
     play(audio)
+    
+def convert_to_audio(text, file_path):
+    response = client.audio.speech.create(
+        model=config.ASSISTANT_VOICE_MODEL,
+        voice=config.ASSISTANT_VOICE,
+        input=text
+    )
+    byte_stream = io.BytesIO(response.content)
+
+    song = AudioSegment.from_file(byte_stream, format="mp3")
+    song.export(file_path, format="mp3")
 
 def audio_to_text(file_path):
     audio_file = open(file_path, "rb")

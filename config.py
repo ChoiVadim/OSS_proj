@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 import os
 import pvporcupine
 
+
 load_dotenv()
 
 OPENAI_KEY = os.getenv('OPENAI_API_KEY')
@@ -21,6 +22,6 @@ porcupine = pvporcupine.create(
 )
 #print(pvporcupine.KEYWORDS)
 
-# INSTRUCTIONS = """Answer the following questions to generate a short response"""
 # pip freeze > requirements.txt
 # pip install -r requirements.txt
+
