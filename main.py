@@ -1,14 +1,12 @@
 import threading
-from time import time
-from time import sleep
-import json
-import os 
+from threading import Thread
+import time
 
+import cv2
 import telebot
 import openai
-from openai import OpenAI
-import cv2
 import cvzone 
+from openai import OpenAI
 from pvrecorder import PvRecorder
 from pydub.playback import play
 from pydub import AudioSegment
@@ -19,15 +17,21 @@ from hand_track_module import HandDetector
 from config import porcupine
 from speech_to_text import speech_to_text
 from openai_module import (generate_image, say, add_message_to_thread,
-                           get_answer)
+                           get_answer, describe_img)
+from commands import *
 
 
 # Global variables
 send_photo_flag = False
+take_photo_flag = False
+init_time = 0
+
 
 # Not in main for using in threads
 openai.api_key = config.OPENAI_KEY
 client = OpenAI()
+# Create a thread for assistant
+# You can add already existing thread id
 thread = client.beta.threads.create()
 
 
@@ -40,11 +44,11 @@ def main():
     thread_for_jarvis_vis.daemon = True
     thread_for_jarvis_vis.start()
 
-    # Create a thread for telegram bot
-    thread_for_telegram_bot = threading.Thread(target=telegram_bot,
-                                               args=(run_event, ))
-    thread_for_telegram_bot.daemon = True
-    thread_for_telegram_bot.start()
+    # # Create a thread for telegram bot
+    # thread_for_telegram_bot = threading.Thread(target=telegram_bot,
+    #                                            args=(run_event, ))
+    # thread_for_telegram_bot.daemon = True
+    # thread_for_telegram_bot.start()
 
 
     # Recorder for a wakeup word
@@ -55,7 +59,7 @@ def main():
 
     # Var for check how much time has been passed
     # before lust wakeup word was called 
-    wakeup_word_time = time() - 1000
+    wakeup_word_time = time.time() - 1000
 
     while True:
         # Read audio for a wakeup word
@@ -69,42 +73,42 @@ def main():
                                            format="mp3")
             play(audio)
             recorder.start()
-            wakeup_word_time = time()
+            wakeup_word_time = time.time()
             
-        while time() - wakeup_word_time <= 20:
+        while time.time() - wakeup_word_time <= 20:
             try:
                 my_msg = speech_to_text()
                 if my_msg:
                     print(f"Human: \033[94m{my_msg}\033[0m")
-                    # Add message to the thread you can add any message
                     add_message_to_thread(thread.id, my_msg)
-                    jarvis_resp = get_answer(config.ASSISTANT_ID, thread)
+                    resp = get_answer(config.ASSISTANT_ID, thread)
 
-                    if type(jarvis_resp) == str:
-                        print(f"Jarvis: \033[95m{jarvis_resp}\033[0m\n")
-                        say(jarvis_resp)
+                    if type(resp) == str:
+                        print(f"Jarvis: \033[95m{resp}\033[0m\n")
+                        say(resp)
 
                     else:
-                        func_name = jarvis_resp[0]
-                        func_arg = json.loads(jarvis_resp[1])["prompt"]
-
-                        if func_name == "generate_image":
-                            say("Yes, sure! Will do it right now.")
-                            print("Drawing... Wait a second!")
-                            generate_image(func_arg)                   
+                        if "mute" in resp: mute()
+                        if "unmute" in resp: unmute()
+                        if "take_a_photo" in resp: take_a_photo()
+                        if "generate_image" in resp: generate_image(resp)   
+                        if "describe_img" in resp: say(describe_img("jpg/screenshot.jpg"))
+                        if "search_and_play_song" in resp:
+                            Thread(target=search_and_play_song, args=(resp, )).start()
        
             except KeyboardInterrupt:
                 run_event.clear()
                 thread_for_jarvis_vis.join()
-                thread_for_telegram_bot.join()
+                # thread_for_telegram_bot.join()
                 recorder.stop()
                 porcupine.delete()
                 print("Goodbye!")
                 break
+
             except (OpenAI.TryAgain, OpenAI.ServiceUnavailableError, 
                     OpenAI.TooManyRequestsError):
                 say("Sorry, Too many requests. Try again later.")
-                sleep(120)
+                time.sleep(120)
 
             except OpenAI.OpenAIError as e:
                 print(e)
@@ -113,7 +117,8 @@ def main():
 
 def jarvis_vis(run_event):
     global send_photo_flag
-    take_photo_flag = False
+    global take_photo_flag
+    global init_time
     face_detection_flag = True
 
     # Create a video capture object
@@ -154,7 +159,7 @@ def jarvis_vis(run_event):
 
             if fingers1 == [0, 1, 1, 0, 0]:
                 take_photo_flag = True
-                init_time = time()
+                init_time = time.time()
 
             # Check if a second hand is detected
             if len(hands) == 2:
@@ -162,7 +167,7 @@ def jarvis_vis(run_event):
 
         # Set timer for taking a photo adn take a photo
         if take_photo_flag:
-            timer = int(time() - init_time)
+            timer = int(time.time() - init_time)
             if timer <= 3:
                 cv2.putText(img, str(timer), (150, 350), cv2.FONT_HERSHEY_PLAIN,
                             25, (255, 255, 255), 20)
@@ -201,6 +206,13 @@ def telegram_bot(run_event):
         th.join()
     except Exception as e:
         print(e)
+
+
+def take_a_photo():
+    global take_photo_flag
+    global init_time
+    take_photo_flag = True
+    init_time = time.time()
 
 
 if __name__ == "__main__":

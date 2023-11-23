@@ -67,27 +67,44 @@ def get_answer(assistant_id, thread):
     print("All done...")
 
     if run.required_action:
-        tool_id = run.required_action.submit_tool_outputs.tool_calls[0].id
-        tool_arg = run.required_action.submit_tool_outputs.tool_calls[0].function.arguments
-        func_name = run.required_action.submit_tool_outputs.tool_calls[0].function.name
+        func_dict = {}
+        functions = run.required_action.submit_tool_outputs.tool_calls
+
+        tool_outputs = []
+
+        for func in functions:
+            func_name = func.function.name
+            func_dict[func_name] = func.function.arguments
+
+            tool_outputs.append({
+                "tool_call_id": func.id,
+                "output": func.function.arguments
+            })
+         
 
         run = client.beta.threads.runs.submit_tool_outputs(
             thread_id=thread.id,
             run_id=run.id,
-            tool_outputs=[
-                {
-                "tool_call_id": tool_id,
-                "output": tool_arg,
-                }
-            ]
+            tool_outputs=tool_outputs
             )
-        return [func_name, tool_arg]
+        
+        if run.status != "completed":
+            run = client.beta.threads.runs.cancel(
+                thread_id=thread.id,
+                run_id=run.id
+            )
+
+        return func_dict
     
     # Get messages from the thread
+    if run.status != "completed":
+        run = client.beta.threads.runs.cancel(
+            thread_id=thread.id,
+            run_id=run.id
+        )
     messages = client.beta.threads.messages.list(thread.id)
     message_content = messages.data[0].content[0].text.value
     return message_content
-#########################################################################
 
 
 
@@ -142,7 +159,7 @@ def vision_url(image_url):
     )
     return response.choices[0].message.content
 
-def vision(image_path):
+def describe_img(image_path):
     # Function to encode the image
     def encode_image(image_path):
         with open(image_path, "rb") as image_file:
@@ -181,9 +198,11 @@ def vision(image_path):
     return response.json().get("choices")[0].get("message").get("content")
 
 def generate_image(prompt):
+    arg = json.loads(prompt["generate_image"])
+
     response = client.images.generate(
         model="dall-e-3",
-        prompt=prompt,
+        prompt=arg["prompt"],
         size="1792x1024",
         quality="standard",
         n=1,
