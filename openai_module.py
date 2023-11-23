@@ -12,6 +12,7 @@ from pydub.playback import play
 
 import config
 
+
 openai.api_key = config.OPENAI_KEY
 client = OpenAI()
 
@@ -27,53 +28,15 @@ def main():
             func_arg = json.loads(msg[1])["prompt"]
             if func_name == "generate_image":
                 generate_image(func_arg)
-    
-
-    # while True:
-    #     msg = input("You: ")
-    #     run = submit_message(config.ASSISTANT_ID, config.THREAD_ID, msg)
-    #     wait_on_run(run, config.THREAD_ID)
-    #     response = get_response(config.THREAD_ID)
-    #     pretty_print(response)
-    #     speak(response.data[0].content[0].text.value)
 
 
-
-# OpenAI functions for the assistant
-def submit_message(assistant_id, thread, user_message):
-    client.beta.threads.messages.create(
-        thread_id=thread, role="user", content=user_message
-    )
-    return client.beta.threads.runs.create(
-        thread_id=thread,
-        assistant_id=assistant_id,
-    )
-
-def get_response(thread):
-    return client.beta.threads.messages.list(thread_id=thread)
-
-def pretty_print(messages):
-    print(f"Jarvis: \033[95m{messages.data[0].content[0].text.value}\033[0m\n")
-
-def wait_on_run(run, thread):
-    while run.status == "queued" or run.status == "in_progress":
-        run = client.beta.threads.runs.retrieve(
-            thread_id=thread,
-            run_id=run.id,
-        )
-        time.sleep(0.5)
-    return run
-
-
-
-## Second ver of the assistant ##########################################
 def create_assistant():
     # Create the assistant
     assistant = client.beta.assistants.create(
-        name="Coding MateTest",
-        instructions="You are a programming support chatbot. Use your knowledge of programming languages to best respond to user queries.",
+        name="MateTest",
+        instructions="This is a test assistant",
         model="gpt-4-1106-preview",
-        tools=config.tools,
+        tools=[],
     )
     return assistant
 
