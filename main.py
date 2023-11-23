@@ -12,13 +12,13 @@ from pydub.playback import play
 from pydub import AudioSegment
 
 import config
-from face_det_module import FaceDetector
-from hand_track_module import HandDetector
 from config import porcupine
-from speech_to_text import speech_to_text
-from openai_module import (generate_image, say, add_message_to_thread,
+from modules.face_det_module import FaceDetector
+from modules.hand_track_module import HandDetector
+from modules.speech_to_text import speech_to_text
+from modules.openai_module import (generate_image, say, add_message_to_thread,
                            get_answer, describe_img)
-from commands import *
+from modules.commands import *
 
 
 # Global variables

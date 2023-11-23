@@ -1,11 +1,10 @@
 import openai
-import json
 from openai import OpenAI
 
 import config
-from openai_module import (generate_image, describe_img,
+from modules.openai_module import (generate_image, describe_img,
                            add_message_to_thread, get_answer)
-from commands import *
+from modules.commands import *
 from threading import Thread
 
 
