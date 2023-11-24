@@ -2,7 +2,7 @@ import speech_recognition as sr
 from pvrecorder import PvRecorder
 
 import config
-from openai_module import audio_to_text
+from modules.openai_module import audio_to_text
 
 
 def speech_to_text():

@@ -7,6 +7,8 @@ from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 import pyautogui
+import folium
+
 
 
 # Volume control
@@ -20,6 +22,16 @@ def mute():
     volume.SetMute(1, None)
 def unmute():
     volume.SetMute(0, None)
+
+
+def find_place(cord):
+    cord = json.loads(cord["find_place"])["cord"]
+    cord = cord.split(", ")
+    mymap=folium.Map(cord, zoom_start=15)
+    folium.Marker(cord, tooltip="부단대학교", icon=folium.Icon(color="red", icon="univercity", prefix="fa" )
+    ).add_to(mymap)
+
+    mymap.show_in_browser()
 
 def search_and_play_song(name):
     args = json.loads(name["search_and_play_song"])

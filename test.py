@@ -41,5 +41,6 @@ while True:
         if "take_a_photo" in jarvis_resp:
             print("Taking a photo...")
 
-
+        if "find_place" in jarvis_resp:
+            find_place(jarvis_resp)
 
