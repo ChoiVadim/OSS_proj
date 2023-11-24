@@ -27,9 +27,15 @@ take_photo_flag = False
 init_time = 0
 MSG = False
 
-# For server
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind(config.ADDR)
+# For local server
+# server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# server.bind(config.ADDR)
+
+# For bluetooth server
+server = socket.socket(socket.AF_BLUETOOTH,
+                        socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
+server.bind((config.HOST_BLUETOOTH, config.PORT_BLUETOOTH))
+
 server.listen(3)
 
 # Not in main for using in threads
@@ -94,6 +100,7 @@ def main():
 
                     else:
                         if "mute" in resp: mute()
+                        if "move" in resp: move()
                         if "unmute" in resp: unmute()
                         if "take_a_photo" in resp: take_photo()
                         if "find_place" in resp: 
@@ -159,6 +166,14 @@ def jarvis_vis(run_event):
             hand1 = hands[0] 
             fingers1 = detector_hand.fingersUp(hand1)
             
+            if fingers1 == [1, 1, 0, 0, 0]:
+                MSG = "move"
+            if fingers1 == [1, 1, 1, 0, 0]:
+                MSG = "stop"
+            if fingers1 == [1, 1, 1, 1, 1]:
+                MSG = "open"
+            if fingers1 == [0, 0, 0, 0, 0]:
+                MSG = "close"
 
             if fingers1 == [0, 1, 1, 0, 0]:
                 take_photo_flag = True
@@ -225,6 +240,9 @@ def take_photo():
     global MSG
     init_time = time.time()
 
+def move():
+    global MSG
+    MSG = "move"
 
 if __name__ == "__main__":
     main()
