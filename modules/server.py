@@ -14,7 +14,7 @@ server.bind(ADDR)
 server.listen(2)
 
 
-def handle_client(conn, addr):
+def handle_client_recv(conn, addr):
     print(f"[NEW CONNECTION] {addr} connected.")
     connected = True
     while connected:
@@ -52,10 +52,10 @@ def handle_client_send(conn, addr):
     conn.close()
 
 
-def start():
+def start_server(run_event):
     server.listen()
     print(f"[LISTENING] Server is listening on {SERVER}")
-    while True:
+    while run_event.is_set():
         conn, addr = server.accept()
         thread = threading.Thread(target=handle_client_send, args=(conn, addr))
         thread.start()
@@ -64,13 +64,21 @@ def start():
 
 
 def main():
-    print("Start server...")
-    threading.Thread(target=start).start()
     global MSG
+
+    print("Start server...")
+    run_event = threading.Event()
+    run_event.set()
+    server_thread = threading.Thread(target=start_server, args=(run_event, ))
+    server_thread.start()
+
     while True:
         try:
             MSG = input("Server: ")
         except KeyboardInterrupt:
+            print("Server is stopped...")
+            run_event.clear()
+            server_thread.join()
             break
 
 if __name__ == "__main__":

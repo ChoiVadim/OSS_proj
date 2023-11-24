@@ -1,11 +1,11 @@
+import time
+import socket
 import threading
 from threading import Thread
-import time
 
 import cv2
-import telebot
-import openai
 import cvzone 
+import openai
 from openai import OpenAI
 from pvrecorder import PvRecorder
 from pydub.playback import play
@@ -13,19 +13,24 @@ from pydub import AudioSegment
 
 import config
 from config import porcupine
+from modules.commands import *
 from modules.face_det_module import FaceDetector
 from modules.hand_track_module import HandDetector
 from modules.speech_to_text import speech_to_text
 from modules.openai_module import (generate_image, say, add_message_to_thread,
                            get_answer, describe_img)
-from modules.commands import *
 
 
 # Global variables
 send_photo_flag = False
 take_photo_flag = False
 init_time = 0
+MSG = False
 
+# For server
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.bind(config.ADDR)
+server.listen(3)
 
 # Not in main for using in threads
 openai.api_key = config.OPENAI_KEY
@@ -36,20 +41,20 @@ thread = client.beta.threads.create()
 
 
 def main():
-    # Create a thread for jarvis vision
+    # Run event for threads
     run_event = threading.Event()
     run_event.set()
+
+    # Create a thread for jarvis vision
     thread_for_jarvis_vis = threading.Thread(target=jarvis_vis,
                                              args=(run_event, ))
     thread_for_jarvis_vis.daemon = True
     thread_for_jarvis_vis.start()
 
-    # # Create a thread for telegram bot
-    # thread_for_telegram_bot = threading.Thread(target=telegram_bot,
-    #                                            args=(run_event, ))
-    # thread_for_telegram_bot.daemon = True
-    # thread_for_telegram_bot.start()
-
+    # Create a thread for server
+    thread_for_server = threading.Thread(target=start_server, args=(run_event, ))
+    thread_for_server.daemon = True
+    thread_for_server.start()
 
     # Recorder for a wakeup word
     recorder = PvRecorder(device_index=1,
@@ -90,8 +95,9 @@ def main():
                     else:
                         if "mute" in resp: mute()
                         if "unmute" in resp: unmute()
-                        if "take_a_photo" in resp: take_a_photo()
-                        if "find_place" in resp: find_place(resp)
+                        if "take_a_photo" in resp: take_photo()
+                        if "find_place" in resp: 
+                            Thread(target=find_place, args=(resp, )).start()
                         if "generate_image" in resp: generate_image(resp)   
                         if "describe_img" in resp: say(describe_img("img/screenshot.jpg"))
                         if "search_and_play_song" in resp:
@@ -99,27 +105,23 @@ def main():
        
             except KeyboardInterrupt:
                 run_event.clear()
-                thread_for_jarvis_vis.join()
-                # thread_for_telegram_bot.join()
                 recorder.stop()
                 porcupine.delete()
+                thread_for_jarvis_vis.join()
+                thread_for_server.join()
                 print("Goodbye!")
                 break
 
             except (OpenAI.TryAgain, OpenAI.ServiceUnavailableError, 
                     OpenAI.TooManyRequestsError):
                 say("Sorry, Too many requests. Try again later.")
-                time.sleep(120)
-
-            except OpenAI.OpenAIError as e:
-                print(e)
-                break
+                time.sleep(200)
             
 
 def jarvis_vis(run_event):
-    global send_photo_flag
     global take_photo_flag
     global init_time
+    global MSG
     face_detection_flag = True
 
     # Create a video capture object
@@ -161,6 +163,7 @@ def jarvis_vis(run_event):
             if fingers1 == [0, 1, 1, 0, 0]:
                 take_photo_flag = True
                 init_time = time.time()
+                MSG = "send photo"
 
             # Check if a second hand is detected
             if len(hands) == 2:
@@ -174,8 +177,8 @@ def jarvis_vis(run_event):
                             25, (255, 255, 255), 20)
             if timer > 3:
                 cv2.imwrite("img/screenshot.jpg", photo)
-                send_photo_flag = True
                 take_photo_flag = False
+                MSG = "send photo"
 
 
         # Display the image in a window
@@ -187,32 +190,39 @@ def jarvis_vis(run_event):
     cv2.destroyAllWindows()
 
 
-def telegram_bot(run_event):
-    bot = telebot.TeleBot(config.TELEGRAM_TOKEN)
+def handle_client_send(conn, addr):
+    global MSG
+    print(f"[NEW CONNECTION] {addr} connected.")
 
-    def send_photo():
-        global send_photo_flag
-        while run_event.is_set():  
-            if send_photo_flag: 
-                with open('img/screenshot.jpg', 'rb') as photo:
-                    bot.send_photo('1815092465', photo)
-                    send_photo_flag = False
-        bot.stop_polling()
+    connected = True
+    while connected:
+        if MSG:
+            message = MSG.encode(config.FORMAT)
+            msg_length = len(message)
+            send_length = str(msg_length).encode(config.FORMAT)
+            send_length += b" " * (config.HEADER - len(send_length))
+            conn.send(send_length)
+            conn.send(message)
+            MSG = False
 
-    try:
-        print("Bot is running...")
-        th = threading.Thread(target=send_photo)
-        th.start()
-        bot.polling(none_stop=True)
-        th.join()
-    except Exception as e:
-        print(e)
+        if MSG == config.DISCONNECT_MESSAGE:
+            connected = False
+    conn.close()
 
 
-def take_a_photo():
+def start_server(run_event):
+    server.listen()
+    print(f"[LISTENING] Server is listening on {config.SERVER}")
+    while run_event.is_set():
+        conn, addr = server.accept()
+        thread = threading.Thread(target=handle_client_send, args=(conn, addr))
+        thread.start()
+        print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 1}")
+
+def take_photo():
     global take_photo_flag
     global init_time
-    take_photo_flag = True
+    global MSG
     init_time = time.time()
 
 
