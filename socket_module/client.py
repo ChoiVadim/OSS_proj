@@ -70,6 +70,7 @@ def main():
     try:
         run_event = threading.Event()
         run_event.set()
+        
         th = threading.Thread(target=telegram_bot, args=(run_event, ))
         th.daemon = True
         th.start()

@@ -91,7 +91,8 @@ def main():
                         if "mute" in resp: mute()
                         if "unmute" in resp: unmute()
                         if "take_a_photo" in resp: take_a_photo()
-                        if "find_place" in resp: find_place(resp)
+                        if "find_place" in resp: 
+                            Thread(target=find_place, args=(resp, )).start()
                         if "generate_image" in resp: generate_image(resp)   
                         if "describe_img" in resp: say(describe_img("img/screenshot.jpg"))
                         if "search_and_play_song" in resp:
