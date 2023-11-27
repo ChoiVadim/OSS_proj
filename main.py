@@ -17,12 +17,12 @@ from modules.commands import *
 from modules.face_det_module import FaceDetector
 from modules.hand_track_module import HandDetector
 from modules.speech_to_text import speech_to_text
-from modules.openai_module import (generate_image, say, add_message_to_thread,
-                           get_answer, describe_img)
+from modules.openai_module import (generate_image, say,
+                                    add_message_to_thread,
+                                    get_answer, describe_img)
 
 
 # Global variables
-send_photo_flag = False
 take_photo_flag = False
 init_time = 0
 MSG = False
@@ -53,18 +53,19 @@ def main():
 
     # Create a thread for jarvis vision
     thread_for_jarvis_vis = threading.Thread(target=jarvis_vis,
-                                             args=(run_event, ))
+                                                args=(run_event, ))
     thread_for_jarvis_vis.daemon = True
     thread_for_jarvis_vis.start()
 
     # Create a thread for server
-    thread_for_server = threading.Thread(target=start_server, args=(run_event, ))
+    thread_for_server = threading.Thread(target=start_server,
+                                            args=(run_event, ))
     thread_for_server.daemon = True
     thread_for_server.start()
 
     # Recorder for a wakeup word
     recorder = PvRecorder(device_index=1,
-                          frame_length=config.porcupine.frame_length)
+                            frame_length=config.porcupine.frame_length)
     recorder.start()
     print('Using device: %s' % recorder.selected_device)
 
@@ -99,16 +100,41 @@ def main():
                         say(resp)
 
                     else:
+                        print(resp)
                         if "mute" in resp: mute()
-                        if "move" in resp: move()
                         if "unmute" in resp: unmute()
-                        if "take_a_photo" in resp: take_photo()
+                        if "move" in resp: move()
+                        if "wake_up" in resp: wake_up()
+
+                        if "take_a_photo" in resp: 
+                            take_photo()
+                            say("Say cheese!")
+                            add_message_to_thread(thread.id, " ")
+                            resp = get_answer(config.ASSISTANT_ID, thread)
+                            say(resp)
+
                         if "find_place" in resp: 
                             Thread(target=find_place, args=(resp, )).start()
-                        if "generate_image" in resp: generate_image(resp)   
-                        if "describe_img" in resp: say(describe_img("img/screenshot.jpg"))
+                            add_message_to_thread(thread.id, " ")
+                            resp = get_answer(config.ASSISTANT_ID, thread)
+                            say(resp)
+
+                        if "generate_image" in resp: 
+                            say("Generating image...")
+                            generate_image(resp)   
+                            add_message_to_thread(thread.id, " ")
+                            resp = get_answer(config.ASSISTANT_ID, thread)
+                            say(resp)
+
+                        if "describe_img" in resp: 
+                            take_photo()
+                            say(describe_img("img/screenshot.jpg"))
+
                         if "search_and_play_song" in resp:
                             Thread(target=search_and_play_song, args=(resp, )).start()
+                            add_message_to_thread(thread.id, " ")
+                            resp = get_answer(config.ASSISTANT_ID, thread)
+                            say(resp)
        
             except KeyboardInterrupt:
                 run_event.clear()
@@ -166,14 +192,19 @@ def jarvis_vis(run_event):
             hand1 = hands[0] 
             fingers1 = detector_hand.fingersUp(hand1)
             
-            if fingers1 == [1, 1, 0, 0, 0]:
-                MSG = "move"
-            if fingers1 == [1, 1, 1, 0, 0]:
-                MSG = "stop"
+            if fingers1 == [1, 0, 0, 0, 0]:
+                MSG = "left"
+            if fingers1 == [0, 0, 0, 0, 1]:
+                MSG = "right"
+            if fingers1 == [0, 1, 0, 0, 0]:
+                MSG = "up"
+            if fingers1 == [0, 1, 1, 1, 1]:
+                MSG = "down"
             if fingers1 == [1, 1, 1, 1, 1]:
                 MSG = "open"
             if fingers1 == [0, 0, 0, 0, 0]:
                 MSG = "close"
+            
 
             if fingers1 == [0, 1, 1, 0, 0]:
                 take_photo_flag = True
@@ -238,6 +269,7 @@ def take_photo():
     global take_photo_flag
     global init_time
     global MSG
+    take_photo_flag = True
     init_time = time.time()
 
 def move():
