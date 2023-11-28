@@ -211,6 +211,10 @@ def generate_image(prompt):
     image_url = response.data[0].url
     webbrowser.open(image_url, new=0, autoraise=True)
 
+def answer_after_func(thread, ASSISTANT_ID):
+    add_message_to_thread(thread.id, " ")
+    resp = get_answer(config.ASSISTANT_ID, thread)
+    say(resp)
 
 if __name__ == "__main__":
     main()

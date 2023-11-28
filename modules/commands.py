@@ -1,8 +1,12 @@
+import config
+from openai_module import say
+
 import time
 import json
 from threading import Thread
 from multiprocessing import Process
 
+import praw
 from comtypes import CLSCTX_ALL
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 
@@ -10,14 +14,8 @@ import folium
 from selenium import webdriver
 import pyautogui
 from selenium.webdriver.common.keys import Keys
-
 from pydub import AudioSegment
 from pydub.playback import play
-
-import praw
-
-import config
-
 
 # Volume control
 devices = AudioUtilities.GetSpeakers()
@@ -83,8 +81,9 @@ def wake_up():
     driver = webdriver.Chrome()
     driver.get("https://www.reddit.com/r/programming/top/")
 
+    reddit_parc()
     # Wait and close
-    time.sleep(30)
+    time.sleep(10)
     process.terminate()
     driver.close()
 
@@ -103,13 +102,14 @@ def reddit_parc():
     
     # Fetch and print the top 10 hot submissions
     
+    say("Here are the top 10 hot news about programming from Reddit for today")
     for submission in subreddit.hot(limit=10):
+        say(submission.title)
         print(submission.title)
-        #print(submission.url)
         print('-----')
 
 def main():
-    reddit_parc()
+    wake_up()
 
 if __name__ == "__main__":
     main()

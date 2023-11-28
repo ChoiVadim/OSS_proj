@@ -11,8 +11,8 @@ from pvrecorder import PvRecorder
 from pydub.playback import play
 from pydub import AudioSegment
 
-import config
-from config import porcupine
+from modules import config
+from modules.config import porcupine
 from modules.commands import *
 from modules.face_det_module import FaceDetector
 from modules.hand_track_module import HandDetector
@@ -204,6 +204,8 @@ def jarvis_vis(run_event):
                 MSG = "open"
             if fingers1 == [0, 0, 0, 0, 0]:
                 MSG = "close"
+            if fingers1 == [1, 1, 0, 0, 1]:
+                MSG = "!DISCONNECT"
             
 
             if fingers1 == [0, 1, 1, 0, 0]:
