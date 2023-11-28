@@ -1,5 +1,5 @@
-import config
-from openai_module import say
+from modules import config
+from modules.openai_module import say
 
 import time
 import json
@@ -32,14 +32,45 @@ def unmute():
 
 
 def find_place(cord):
-    cord = json.loads(cord["find_place"])["cord"]
-    cord = cord.split(", ")
-    mymap=folium.Map(cord, zoom_start=15)
-    folium.Marker(cord, tooltip="Your place", icon=folium.Icon(color="red", icon="", prefix="fa" )
-    ).add_to(mymap)
+    try:
+        cord = json.loads(cord["find_place"])["cord"]
+        cord = cord.replace("[", "").replace("]", "").replace(" ", "").split(",")
+        mymap=folium.Map(cord, zoom_start=15)
+        folium.Marker(cord, tooltip="Your place", icon=folium.Icon(color="red", icon="", prefix="fa" )
+        ).add_to(mymap)
 
-    mymap.show_in_browser()
+        mymap.show_in_browser()
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
 
+
+def search_video(name):
+    args = json.loads(name["search_video"])
+    try:
+        # Open Chrome
+        driver = webdriver.Chrome()
+
+        # Open YouTube
+        driver.get("https://www.youtube.com")
+
+        # Find the search input and type the song name
+        search_box = driver.find_element("name", "search_query")
+        search_box.send_keys(args["name"])
+        search_box.send_keys(Keys.RETURN)
+
+        # Wait for search results to load
+        time.sleep(5)
+
+        # Click on the first video (assuming it's the top result)
+        pyautogui.click(x=300, y=400)  # Adjust the coordinates based on your screen resolution
+        time.sleep(8)
+        pyautogui.click(x=800, y=600)
+        # Wait for the video to load
+        time.sleep(40)
+    
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+        driver.quit()
 
 def search_and_play_song(name):
     args = json.loads(name["search_and_play_song"])
@@ -60,10 +91,10 @@ def search_and_play_song(name):
 
         # Click on the first video (assuming it's the top result)
         pyautogui.click(x=300, y=400)  # Adjust the coordinates based on your screen resolution
-        time.sleep(7)
+        time.sleep(8)
         pyautogui.click(x=800, y=600)
         # Wait for the video to load
-        time.sleep(120)
+        time.sleep(40)
 
 
     except Exception as e:
@@ -81,7 +112,7 @@ def wake_up():
     driver = webdriver.Chrome()
     driver.get("https://www.reddit.com/r/programming/top/")
 
-    reddit_parc()
+    # reddit_parc()
     # Wait and close
     time.sleep(10)
     process.terminate()

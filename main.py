@@ -27,7 +27,7 @@ take_photo_flag = False
 init_time = 0
 MSG = False
 
-# For local server
+# #For local server
 # server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # server.bind(config.ADDR)
 
@@ -105,36 +105,39 @@ def main():
                         if "unmute" in resp: unmute()
                         if "move" in resp: move()
                         if "wake_up" in resp: wake_up()
+                        if "search_video" in resp:
+                            Thread(target=search_video, args=(resp, )).start()
 
                         if "take_a_photo" in resp: 
                             take_photo()
                             say("Say cheese!")
                             add_message_to_thread(thread.id, " ")
-                            resp = get_answer(config.ASSISTANT_ID, thread)
-                            say(resp)
+                            res = get_answer(config.ASSISTANT_ID, thread)
+                            say(res)
 
                         if "find_place" in resp: 
                             Thread(target=find_place, args=(resp, )).start()
                             add_message_to_thread(thread.id, " ")
-                            resp = get_answer(config.ASSISTANT_ID, thread)
-                            say(resp)
+                            res = get_answer(config.ASSISTANT_ID, thread)
+                            say(res)
 
                         if "generate_image" in resp: 
                             say("Generating image...")
                             generate_image(resp)   
                             add_message_to_thread(thread.id, " ")
-                            resp = get_answer(config.ASSISTANT_ID, thread)
-                            say(resp)
+                            res = get_answer(config.ASSISTANT_ID, thread)
+                            say(res)
 
                         if "describe_img" in resp: 
-                            take_photo()
-                            say(describe_img("img/screenshot.jpg"))
+                            res = describe_img("img/screenshot.jpg")
+                            print(f"Jarvis: \033[95m{res}\033[0m")
+                            say(res)
 
                         if "search_and_play_song" in resp:
                             Thread(target=search_and_play_song, args=(resp, )).start()
                             add_message_to_thread(thread.id, " ")
-                            resp = get_answer(config.ASSISTANT_ID, thread)
-                            say(resp)
+                            res = get_answer(config.ASSISTANT_ID, thread)
+                            say(res)
        
             except KeyboardInterrupt:
                 run_event.clear()

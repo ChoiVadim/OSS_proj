@@ -10,7 +10,7 @@ from openai import OpenAI
 from pydub import AudioSegment
 from pydub.playback import play
 
-import config
+from modules import config
 
 
 openai.api_key = config.OPENAI_KEY
@@ -180,7 +180,7 @@ def describe_img(image_path):
             "content": [
                 {
                 "type": "text",
-                "text": "What is in this image? Give a really short description. Should be less than 10 words."
+                "text": "What is in this image? Give a short description. Should be less than 15 words."
                 },
                 {
                 "type": "image_url",

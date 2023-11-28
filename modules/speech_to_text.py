@@ -1,7 +1,7 @@
 import speech_recognition as sr
 from pvrecorder import PvRecorder
 
-import config
+from modules import config
 from modules.openai_module import audio_to_text
 
 
