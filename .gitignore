@@ -1,6 +1,6 @@
 /venv
 /__pycache__/
-img
-sound
+/img
+/sound
 .env
 modules/__pycache__/

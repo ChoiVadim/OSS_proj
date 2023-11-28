@@ -14,6 +14,10 @@ from selenium.webdriver.common.keys import Keys
 from pydub import AudioSegment
 from pydub.playback import play
 
+import praw
+
+import config
+
 
 # Volume control
 devices = AudioUtilities.GetSpeakers()
@@ -84,8 +88,28 @@ def wake_up():
     process.terminate()
     driver.close()
 
+
+def reddit_parc():
+    # Set up your Reddit API credentials
+    reddit = praw.Reddit(client_id=config.reddit_client_id,
+                        client_secret=config.reddit_client_secret,
+                        user_agent=config.reddit_user_agent,
+                        username=config.reddit_username,
+                        password=config.reddit_password)
+
+    # Choose the programming-related subreddit
+    subreddit_name = 'programming'
+    subreddit = reddit.subreddit(subreddit_name)
+    
+    # Fetch and print the top 10 hot submissions
+    
+    for submission in subreddit.hot(limit=10):
+        print(submission.title)
+        #print(submission.url)
+        print('-----')
+
 def main():
-    wake_up()
+    reddit_parc()
 
 if __name__ == "__main__":
     main()
