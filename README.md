@@ -11,10 +11,10 @@ Jarvis is a simple voice assistant created as an experiment, combining the power
  - Other.
 
 ## Installation
-Install Requirements: Use the provided requirements.txt file to install the necessary dependencies.
-`pip install -r requirements.txt`
-Configure Settings: Open the config.py file and set the required values like API keys.
-Run Jarvis: Execute the main.py script to start Jarvis.
+ - Install Requirements: Use the provided requirements.txt file to install the necessary dependencies.
+`pip install -r requirements.txt`.
+ - Configure Settings: Open the config.py file and set the required values like API keys.
+ - Run Jarvis: Execute the main.py script to start Jarvis.
 
 ## Python version
 I was using Python `3.11.3`, but it should work on any newer version.
@@ -23,5 +23,4 @@ I was using Python `3.11.3`, but it should work on any newer version.
 Jenkins is **licensed** under the **[MIT License](https://github.com/ChoiVadim/OSS_proj/blob/main/LICENSE.txt)**.
 
 ## P.S
-Feel free to customize Jarvis according to your needs.
-You can add any scripts or func what do you want.
+Feel free to customize Jarvis according to your needs. You can add any scripts or function what do you want.
