@@ -11,9 +11,12 @@ Jarvis is a simple voice assistant created as an experiment, combining the power
  - Other.
 
 ## Installation
- - Install Requirements: Use the provided requirements.txt file to install the necessary dependencies.
-`pip install -r requirements.txt`.
- - Configure Settings: Open the config.py file and set the required values like API keys.
+ - Pull a repository `git pull https://github.com/ChoiVadim/OSS_proj.git`.
+ - Create virtual environment: `python -m venv venv`.
+ - Start virtual environment: `venv/Scripts/Activate.ps1`.
+ - Install Requirements: `pip install -r requirements.txt`.
+ - Create a .env file and put all Keys in this file Ex. OPENAI_API_KEY = your_key
+ - Configure Settings: Open the config.py file and check the required values.
  - You need to download a [jjmpeg](https://ffmpeg.org/download.html) too.
  - Run Jarvis: Execute the main.py script to start Jarvis.
 
@@ -25,3 +28,4 @@ Jenkins is **licensed** under the **[MIT License](https://github.com/ChoiVadim/O
 
 ## P.S
 Feel free to customize Jarvis according to your needs. You can add any scripts or function what do you want.
+If you home some question fell free to send a message to [me](https://www.instagram.com/choi_vadim/)
