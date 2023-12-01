@@ -94,7 +94,7 @@ def search_and_play_song(name):
         time.sleep(8)
         pyautogui.click(x=800, y=600)
         # Wait for the video to load
-        time.sleep(40)
+        time.sleep(60)
 
 
     except Exception as e:
@@ -112,10 +112,10 @@ def wake_up():
     driver = webdriver.Chrome()
     driver.get("https://www.reddit.com/r/programming/top/")
 
-    # reddit_parc()
+    reddit_parc()
     # Wait and close
-    time.sleep(10)
     process.terminate()
+    time.sleep(10)
     driver.close()
 
 

@@ -6,6 +6,7 @@ from threading import Thread
 import cv2
 import cvzone 
 import openai
+import telebot
 from openai import OpenAI
 from pvrecorder import PvRecorder
 from pydub.playback import play
@@ -24,6 +25,7 @@ from modules.openai_module import (generate_image, say,
 
 # Global variables
 take_photo_flag = False
+send_photo_flag = False
 init_time = 0
 MSG = False
 
@@ -31,12 +33,12 @@ MSG = False
 # server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # server.bind(config.ADDR)
 
-# For bluetooth server
-server = socket.socket(socket.AF_BLUETOOTH,
-                        socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
-server.bind((config.HOST_BLUETOOTH, config.PORT_BLUETOOTH))
+# # For bluetooth server
+# server = socket.socket(socket.AF_BLUETOOTH,
+#                         socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
+# server.bind((config.HOST_BLUETOOTH, config.PORT_BLUETOOTH))
 
-server.listen(3)
+# server.listen(3)
 
 # Not in main for using in threads
 openai.api_key = config.OPENAI_KEY
@@ -57,11 +59,16 @@ def main():
     thread_for_jarvis_vis.daemon = True
     thread_for_jarvis_vis.start()
 
-    # Create a thread for server
-    thread_for_server = threading.Thread(target=start_server,
-                                            args=(run_event, ))
-    thread_for_server.daemon = True
-    thread_for_server.start()
+    # # Create a thread for server
+    # thread_for_server = threading.Thread(target=start_server,
+    #                                         args=(run_event, ))
+    # thread_for_server.daemon = True
+    # thread_for_server.start()
+
+    # # Create a thread for telebot
+    # telebot_thread = threading.Thread(target=send_photo, args=(run_event, ))
+    # telebot_thread.daemon = True
+    # telebot_thread.start()
 
     # Recorder for a wakeup word
     recorder = PvRecorder(device_index=1,
@@ -111,33 +118,26 @@ def main():
                         if "take_a_photo" in resp: 
                             take_photo()
                             say("Say cheese!")
-                            add_message_to_thread(thread.id, " ")
-                            res = get_answer(config.ASSISTANT_ID, thread)
-                            say(res)
-
+          
                         if "find_place" in resp: 
                             Thread(target=find_place, args=(resp, )).start()
-                            add_message_to_thread(thread.id, " ")
-                            res = get_answer(config.ASSISTANT_ID, thread)
-                            say(res)
 
-                        if "generate_image" in resp: 
-                            say("Generating image...")
+                        if "search_and_play_song" in resp:
+                            Thread(target=search_and_play_song, args=(resp, )).start()
+                    
+                        if "generate_image" in resp:
+                            Thread(say("It will take some time, please wait.")).start()
                             generate_image(resp)   
-                            add_message_to_thread(thread.id, " ")
-                            res = get_answer(config.ASSISTANT_ID, thread)
-                            say(res)
 
                         if "describe_img" in resp: 
                             res = describe_img("img/screenshot.jpg")
                             print(f"Jarvis: \033[95m{res}\033[0m")
                             say(res)
-
-                        if "search_and_play_song" in resp:
-                            Thread(target=search_and_play_song, args=(resp, )).start()
-                            add_message_to_thread(thread.id, " ")
-                            res = get_answer(config.ASSISTANT_ID, thread)
-                            say(res)
+                        
+                        add_message_to_thread(thread.id, " ")
+                        res = get_answer(config.ASSISTANT_ID, thread)
+                        print(f"Jarvis: \033[95m{res}\033[0m\n")
+                        say(res)
        
             except KeyboardInterrupt:
                 run_event.clear()
@@ -148,14 +148,20 @@ def main():
                 print("Goodbye!")
                 break
 
-            except (OpenAI.TryAgain, OpenAI.ServiceUnavailableError, 
-                    OpenAI.TooManyRequestsError):
-                say("Sorry, Too many requests. Try again later.")
-                time.sleep(200)
+            except openai.BadRequestError as e:
+                print(f"An error occurred: {str(e)}")
+                say("Sorry, im tired, i need to rest.")
+                time.sleep(10)
+            
+            except Exception as e:
+                print(f"An error occurred: {str(e)}")
+                say("Sorry, i dont understand you.")
+                time.sleep(10)
             
 
 def jarvis_vis(run_event):
     global take_photo_flag
+    global send_photo_flag
     global init_time
     global MSG
     face_detection_flag = True
@@ -229,6 +235,7 @@ def jarvis_vis(run_event):
             if timer > 3:
                 cv2.imwrite("img/screenshot.jpg", photo)
                 take_photo_flag = False
+                send_photo_flag = True
                 MSG = "send photo"
 
 
@@ -276,6 +283,17 @@ def take_photo():
     global MSG
     take_photo_flag = True
     init_time = time.time()
+
+def send_photo(run_event):
+    global send_photo_flag
+
+    bot = telebot.TeleBot(config.TELEGRAM_TOKEN)
+    while run_event.is_set():
+
+        if send_photo_flag: 
+            with open('img/screenshot.jpg', 'rb') as photo:
+                bot.send_photo('1815092465', photo)
+                send_photo_flag = False
 
 def move():
     global MSG
