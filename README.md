@@ -14,6 +14,7 @@ Jarvis is a simple voice assistant created as an experiment, combining the power
  - Install Requirements: Use the provided requirements.txt file to install the necessary dependencies.
 `pip install -r requirements.txt`.
  - Configure Settings: Open the config.py file and set the required values like API keys.
+ - You need to download a [jjmpeg](https://ffmpeg.org/download.html) too.
  - Run Jarvis: Execute the main.py script to start Jarvis.
 
 ## Python version
