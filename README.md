@@ -20,6 +20,9 @@ Jarvis is a simple voice assistant created as an experiment, combining the power
  - You need to download a [jjmpeg](https://ffmpeg.org/download.html) too.
  - Run Jarvis: Execute the main.py script to start Jarvis.
 
+*You need to create your Assistant [here](https://platform.openai.com/assistants). And get ASSISTANT_ID.
+And if you wanna run a func you need to put all functions too your Assistant too TOOLS->FUNCTIONS->ADD.
+
 ## Python version
 I was using Python `3.11.3`, but it should work on any newer version.
 
