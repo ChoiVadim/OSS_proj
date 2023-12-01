@@ -16,7 +16,7 @@ Jarvis is a simple voice assistant created as an experiment, combining the power
  - Start virtual environment: `venv/Scripts/Activate.ps1`.
  - Install Requirements: `pip install -r requirements.txt`.
  - Create a .env file and put all Keys in this file Ex. OPENAI_API_KEY = your_key
- - Configure Settings: Open the config.py file and check the required values.
+ - Configure Settings: Open the config.py file and check the required values, set a MICROPHONE_DEVICE_INDEX.
  - You need to download a [jjmpeg](https://ffmpeg.org/download.html) too.
  - Run Jarvis: Execute the main.py script to start Jarvis.
 

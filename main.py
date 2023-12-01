@@ -71,7 +71,7 @@ def main():
     # telebot_thread.start()
 
     # Recorder for a wakeup word
-    recorder = PvRecorder(device_index=1,
+    recorder = PvRecorder(device_index=config.MICROPHONE_DEVICE_INDEX,
                             frame_length=config.porcupine.frame_length)
     recorder.start()
     print('Using device: %s' % recorder.selected_device)
